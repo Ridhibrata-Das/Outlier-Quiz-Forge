@@ -11,11 +11,13 @@ let defaultLanguage = process.env.NEXT_PUBLIC_DEFAULT_LANGUAGE
 
 
 let resources = {};
-supportedLanguages.forEach((element) => {
-    resources[element] = {
-        translations: require("../locale/" + element + ".json"),
-    };
-});
+if (supportedLanguages) {
+    supportedLanguages.forEach((element) => {
+        resources[element] = {
+            translations: require("../locale/" + element + ".json"),
+        };
+    });
+}
 i18n.use(initReactI18next).init({
     fallbackLng: defaultLanguage,
     lng: defaultLanguage,
