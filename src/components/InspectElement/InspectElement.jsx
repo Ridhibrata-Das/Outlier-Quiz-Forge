@@ -26,12 +26,16 @@ const InspectElement = ({ children }) => {
         }
       }
 
-      document.addEventListener('contextmenu', handleContextMenu)
-      document.addEventListener('keydown', handleKeyDown)
+      if (typeof window !== 'undefined') {
+        document.addEventListener('contextmenu', handleContextMenu)
+        document.addEventListener('keydown', handleKeyDown)
+      }
 
       return () => {
-        document.removeEventListener('contextmenu', handleContextMenu)
-        document.removeEventListener('keydown', handleKeyDown)
+        if (typeof window !== 'undefined') {
+          document.removeEventListener('contextmenu', handleContextMenu)
+          document.removeEventListener('keydown', handleKeyDown)
+        }
       }
     }
   }, [])
