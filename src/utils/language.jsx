@@ -3,7 +3,9 @@ import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 
 let supportedLanguages = process.env.NEXT_PUBLIC_LANGUAGE_CONFIGURATION;
-supportedLanguages = supportedLanguages.substring(1, supportedLanguages.length - 1).split(',').map(lang => lang.trim().replace(/'/g, ''));
+if (supportedLanguages) {
+    supportedLanguages = supportedLanguages.substring(1, supportedLanguages.length - 1).split(',').map(lang => lang.trim().replace(/'/g, ''));
+}
 
 let defaultLanguage = process.env.NEXT_PUBLIC_DEFAULT_LANGUAGE
 
