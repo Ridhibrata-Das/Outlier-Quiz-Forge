@@ -20,8 +20,46 @@ const nextConfig = {
     'rc-picker'
   ],
   trailingSlash: true,
-  reactStrictMode: false,
-  webpack: (config, { isServer }) => {
+  reactStrictMode: true,
+  swcMinify: true,
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production'
+  },
+  webpack: (config, { dev, isServer }) => {
+    // Optimize CSS
+    config.module.rules.push({
+      test: /\.css$/,
+      use: [
+        {
+          loader: 'postcss-loader',
+          options: {
+            postcssOptions: {
+              plugins: [
+                'postcss-flexbugs-fixes',
+                [
+                  'postcss-preset-env',
+                  {
+                    autoprefixer: {
+                      flexbox: 'no-2009',
+                      grid: 'autoplace'
+                    },
+                    stage: 3
+                  }
+                ]
+              ]
+            }
+          }
+        }
+      ]
+    })
+
+    // Ignore specific warnings
+    config.ignoreWarnings = [
+      { module: /node_modules\/lottie-web/ },
+      { message: /autoprefixer: start value has mixed support/ },
+      { message: /autoprefixer: end value has mixed support/ }
+    ]
+
     if (isServer) {
       require('./scripts/sitemap-generator')
     }
@@ -32,11 +70,10 @@ const nextConfig = {
     return config
   },
   async exportPathMap(defaultPathMap, { dev, dir, outDir, distDir, buildId }) {
-    
     if (dir && outDir && fs.existsSync(path.join(dir, '.htaccess'))) {
       fs.copyFileSync(path.join(dir, '.htaccess'), path.join(outDir, '.htaccess'))
     } else {
-      console.log('');
+      console.log('')
     }
     return defaultPathMap
   }
