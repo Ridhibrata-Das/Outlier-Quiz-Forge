@@ -22,11 +22,16 @@ const Layout = dynamic(() => import('src/components/Layout/Layout'), {
     loading: () => <div className="loading-placeholder" />
 })
 
-const MySwal = withReactContent(Swal)
+// Dynamically import SweetAlert2 with no SSR
+const MySwal = dynamic(() =>
+    Promise.resolve(withReactContent(Swal)),
+    { ssr: false }
+)
 
 const TrueandFalsePlay = () => {
     const [isClient, setIsClient] = useState(false)
     const [isLoading, setIsLoading] = useState(true)
+    const [swalInstance, setSwalInstance] = useState(null)
     const dispatch = useDispatch()
     const router = useRouter()
 
@@ -43,10 +48,14 @@ const TrueandFalsePlay = () => {
     useEffect(() => {
         setIsClient(true)
         setIsLoading(false)
+        // Initialize SweetAlert2 only on client side
+        import('sweetalert2').then(({ default: Swal }) => {
+            setSwalInstance(withReactContent(Swal))
+        })
     }, [])
 
     const handleReviewAnswers = () => {
-        if (!isClient) return
+        if (!isClient || !swalInstance) return
 
         let coins = review_answers_deduct_coin
         if (!reviewAnserShow) {
@@ -56,7 +65,7 @@ const TrueandFalsePlay = () => {
             }
         }
 
-        MySwal.fire({
+        swalInstance.fire({
             title: t("are_you_sure"),
             text: !reviewAnserShow ? review_answers_deduct_coin + " " + t("coin_will_deduct") : null,
             icon: "warning",
@@ -81,7 +90,9 @@ const TrueandFalsePlay = () => {
                             dispatch(reviewAnswerShowSuccess(true))
                         },
                         onError: (error) => {
-                            Swal.fire(t("ops"), t('Please '), t("try_again"), "error")
+                            if (swalInstance) {
+                                swalInstance.fire(t("ops"), t('Please '), t("try_again"), "error")
+                            }
                             console.error(error)
                         }
                     })
