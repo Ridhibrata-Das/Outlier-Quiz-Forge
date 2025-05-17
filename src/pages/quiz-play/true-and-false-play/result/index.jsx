@@ -13,39 +13,46 @@ import { getQuizEndData, reviewAnswerShowData, reviewAnswerShowSuccess, selectPe
 import ShowScore from 'src/components/Common/ShowScore'
 import { t } from 'i18next'
 import dynamic from 'next/dynamic'
-import { Suspense } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import ShowScoreSkeleton from 'src/components/view/common/ShowScoreSkeleton'
-const Layout = dynamic(() => import('src/components/Layout/Layout'), { ssr: false })
+
+// Dynamically import components that use browser APIs
+const Layout = dynamic(() => import('src/components/Layout/Layout'), {
+    ssr: false,
+    loading: () => <div className="loading-placeholder" />
+})
 
 const MySwal = withReactContent(Swal)
 
 const TrueandFalsePlay = () => {
-
+    const [isClient, setIsClient] = useState(false)
+    const [isLoading, setIsLoading] = useState(true)
     const dispatch = useDispatch()
+    const router = useRouter()
 
     const reviewAnserShow = useSelector(reviewAnswerShowData)
-
-    const showScore = useSelector(selectResultTempData);
-
+    const showScore = useSelector(selectResultTempData)
     const percentageScore = useSelector(selectPercentage)
-
     const resultScore = useSelector(getQuizEndData)
-
-    //location
-    const navigate = useRouter()
-
     const systemconfig = useSelector(sysConfigdata)
-
-    const review_answers_deduct_coin = Number(systemconfig?.review_answers_deduct_coin)
-
     const userData = useSelector(state => state.User)
 
+    const review_answers_deduct_coin = Number(systemconfig?.review_answers_deduct_coin || 0)
+
+    // Handle client-side initialization
+    useEffect(() => {
+        setIsClient(true)
+        setIsLoading(false)
+    }, [])
+
     const handleReviewAnswers = () => {
+        if (!isClient) return
+
         let coins = review_answers_deduct_coin
         if (!reviewAnserShow) {
             if (userData?.data?.coins < coins) {
-                toast.error(t("no_enough_coins"));
-                return false;
+                toast.error(t("no_enough_coins"))
+                return false
             }
         }
 
@@ -63,31 +70,64 @@ const TrueandFalsePlay = () => {
         }).then((result) => {
             if (result.isConfirmed) {
                 if (!reviewAnserShow) {
-
-                    let status = 1;
+                    let status = 1
                     UserCoinScoreApi({
                         coins: "-" + coins,
                         title: t("True & False") + " " + t("review_answer"),
                         status: status,
                         onSuccess: (response) => {
-                            updateUserDataInfo(response.data);
-                            navigate.push("/quiz-play/true-and-false-play/review-answer")
+                            updateUserDataInfo(response.data)
+                            router.push("/quiz-play/true-and-false-play/review-answer")
                             dispatch(reviewAnswerShowSuccess(true))
                         },
                         onError: (error) => {
-                            Swal.fire(t("ops"), t('Please '), t("try_again"), "error");
-                            console.log(error);
+                            Swal.fire(t("ops"), t('Please '), t("try_again"), "error")
+                            console.error(error)
                         }
-                    });
+                    })
                 } else {
-                    navigate.push("/quiz-play/true-and-false-play/review-answer")
+                    router.push("/quiz-play/true-and-false-play/review-answer")
                 }
             }
-        });
-    };
+        })
+    }
 
     const goBack = () => {
-        navigate.push('/quiz-play')
+        router.push('/quiz-play')
+    }
+
+    // Show loading state during SSR or initial client render
+    if (!isClient || isLoading) {
+        return (
+            <div className='true_and_false dashboard'>
+                <div className='container'>
+                    <div className='row'>
+                        <div className='morphisam bg_white'>
+                            <div className='whitebackground'>
+                                <ShowScoreSkeleton />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        )
+    }
+
+    // Show loading state if no data
+    if (!showScore || !resultScore) {
+        return (
+            <div className='true_and_false dashboard'>
+                <div className='container'>
+                    <div className='row'>
+                        <div className='morphisam bg_white'>
+                            <div className='whitebackground'>
+                                <ShowScoreSkeleton />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        )
     }
 
     return (
@@ -95,7 +135,7 @@ const TrueandFalsePlay = () => {
             <Breadcrumb title={t('True & False')} content="" contentTwo="" />
             <div className='true_and_false dashboard'>
                 <div className='container'>
-                    <div className='row '>
+                    <div className='row'>
                         <div className='morphisam bg_white'>
                             <div className='whitebackground'>
                                 <Suspense fallback={<ShowScoreSkeleton />}>
@@ -116,7 +156,6 @@ const TrueandFalsePlay = () => {
                             </div>
                         </div>
                     </div>
-
                 </div>
             </div>
         </Layout>
@@ -124,3 +163,4 @@ const TrueandFalsePlay = () => {
 }
 
 export default withTranslation()(TrueandFalsePlay)
+
